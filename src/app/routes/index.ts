@@ -5,6 +5,8 @@ import { clientRoutes } from "../modules/Client/client.routes";
 import { hallRoomPostRoutes } from "../modules/hallRoom/hallRoom.routes";
 import { paidImageRoutes } from "../modules/paidImage/paidImage.routes";
 import { paidVideoRoutes } from "../modules/paidVideo/paidVideo.routes";
+import { adminRoutes } from "../modules/Admin/admin.routes";
+import { employeeRoutes } from "../modules/employee/employee.routes";
 
 const router = express.Router();
 
@@ -29,10 +31,10 @@ const moduleRoutes = [
   //   path: "/question",
   //   route: questionRoutes,
   // },
-  // {
-  //   path: "/admin",
-  //   route: adminRoutes,
-  // },
+  {
+    path: "/admin",
+    route: adminRoutes,
+  },
   {
     path: "/user",
     route: userRoutes,
@@ -41,10 +43,10 @@ const moduleRoutes = [
     path: "/client",
     route: clientRoutes,
   },
-  // {
-  //   path: "/employee",
-  //   route: employeeRoutes,
-  // },
+  {
+    path: "/employee",
+    route: employeeRoutes,
+  },
   {
     path: "/hall_room_post",
     route: hallRoomPostRoutes,
