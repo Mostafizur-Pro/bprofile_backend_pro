@@ -1,8 +1,10 @@
 import express from "express";
 
 import { userRoutes } from "../modules/User/user.routes";
-
-
+import { clientRoutes } from "../modules/Client/client.routes";
+import { hallRoomPostRoutes } from "../modules/hallRoom/hallRoom.routes";
+import { paidImageRoutes } from "../modules/paidImage/paidImage.routes";
+import { paidVideoRoutes } from "../modules/paidVideo/paidVideo.routes";
 
 const router = express.Router();
 
@@ -35,26 +37,26 @@ const moduleRoutes = [
     path: "/user",
     route: userRoutes,
   },
-  // {
-  //   path: "/client",
-  //   route: clientRoutes,
-  // },
+  {
+    path: "/client",
+    route: clientRoutes,
+  },
   // {
   //   path: "/employee",
   //   route: employeeRoutes,
   // },
-  // {
-  //   path: "/hall_room_post",
-  //   route: hallRoomPostRoutes,
-  // },
-  // {
-  //   path: "/paid_image",
-  //   route: paidImageRoutes,
-  // },
-  // {
-  //   path: "/paid_video",
-  //   route: paidVideoRoutes,
-  // },
+  {
+    path: "/hall_room_post",
+    route: hallRoomPostRoutes,
+  },
+  {
+    path: "/paid_image",
+    route: paidImageRoutes,
+  },
+  {
+    path: "/paid_video",
+    route: paidVideoRoutes,
+  },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
