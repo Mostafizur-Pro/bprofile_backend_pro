@@ -9,12 +9,15 @@ const client_routes_1 = require("../modules/Client/client.routes");
 const hallRoom_routes_1 = require("../modules/hallRoom/hallRoom.routes");
 const paidImage_routes_1 = require("../modules/paidImage/paidImage.routes");
 const paidVideo_routes_1 = require("../modules/paidVideo/paidVideo.routes");
+const admin_routes_1 = require("../modules/Admin/admin.routes");
+const employee_routes_1 = require("../modules/employee/employee.routes");
+const auth_routes_1 = require("../modules/Auth/auth.routes");
 const router = express_1.default.Router();
 const moduleRoutes = [
-    // {
-    //   path: "/",
-    //   route: authRoutes,
-    // },
+    {
+        path: "/",
+        route: auth_routes_1.authRoutes,
+    },
     // {
     //   path: "/locations",
     //   route: locationRoutes,
@@ -31,10 +34,10 @@ const moduleRoutes = [
     //   path: "/question",
     //   route: questionRoutes,
     // },
-    // {
-    //   path: "/admin",
-    //   route: adminRoutes,
-    // },
+    {
+        path: "/admin",
+        route: admin_routes_1.adminRoutes,
+    },
     {
         path: "/user",
         route: user_routes_1.userRoutes,
@@ -43,10 +46,10 @@ const moduleRoutes = [
         path: "/client",
         route: client_routes_1.clientRoutes,
     },
-    // {
-    //   path: "/employee",
-    //   route: employeeRoutes,
-    // },
+    {
+        path: "/employee",
+        route: employee_routes_1.employeeRoutes,
+    },
     {
         path: "/hall_room_post",
         route: hallRoom_routes_1.hallRoomPostRoutes,

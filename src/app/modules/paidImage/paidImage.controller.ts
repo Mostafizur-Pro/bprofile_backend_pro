@@ -10,7 +10,7 @@ const getAllPaidImages = catchAsync(
     connection.query(
       "SELECT * FROM paid_image_post",
       (error: any, results: any, fields: any) => {
-        console.log("results", results);
+        // console.log("results", results);
         if (error) {
           console.error("Error fetching post:", error);
           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -109,7 +109,7 @@ const createPaidImage = catchAsync(
       created_at: formattedDate,
       updated_at: formattedDate,
     };
- console.log('newPost', newPost)
+//  console.log('newPost', newPost)
     connection.query(
       "INSERT INTO paid_image_post SET ?",
       newPost,

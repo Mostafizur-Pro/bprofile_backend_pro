@@ -20,7 +20,7 @@ const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const config_1 = require("../../config");
 const getAllPaidImages = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     config_1.connection.query("SELECT * FROM paid_image_post", (error, results, fields) => {
-        console.log("results", results);
+        // console.log("results", results);
         if (error) {
             console.error("Error fetching post:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
@@ -98,7 +98,7 @@ const createPaidImage = (0, catchAsync_1.default)((req, res, next) => __awaiter(
         created_at: formattedDate,
         updated_at: formattedDate,
     };
-    console.log('newPost', newPost);
+    //  console.log('newPost', newPost)
     config_1.connection.query("INSERT INTO paid_image_post SET ?", newPost, (error, results, fields) => {
         if (error) {
             console.error("Error creating newPost:", error);

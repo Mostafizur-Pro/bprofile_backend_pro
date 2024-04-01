@@ -12,24 +12,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.paidVideoController = void 0;
+exports.employeeController = void 0;
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const moment_timezone_1 = __importDefault(require("moment-timezone"));
+const generateId_1 = require("../../../utils/generateId");
 const config_1 = require("../../config");
-const getAllPaidVideos = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    config_1.connection.query("SELECT * FROM paid_video_post", (error, results, fields) => {
-        // console.log("results", results);
+const getAllEmployees = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    config_1.connection.query("SELECT * FROM employee_info", (error, results, fields) => {
+        // console.log("resu", results);
         if (error) {
-            console.error("Error fetching post:", error);
+            console.error("Error fetching employees:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal Server Error",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Error fetching post",
+                        message: "Error fetching employees",
                     },
                 ],
             });
@@ -37,24 +38,24 @@ const getAllPaidVideos = (0, catchAsync_1.default)((req, res, next) => __awaiter
         (0, sendResponse_1.default)(res, {
             statusCode: http_status_1.default.CREATED,
             success: true,
-            message: "Post fetched successfully",
+            message: "Employee fetched successfully",
             data: results,
         });
     });
 }));
-const getPaidVideoById = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const postId = req.params.id; // Assuming postId is passed as a route parameter
-    // console.log("id", postId);
-    config_1.connection.query("SELECT * FROM paid_video_post WHERE id = ?", [postId], (error, results, fields) => {
+const getEmployeeById = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const employeeId = req.params.id; // Assuming employeeId is passed as a route parameter
+    // console.log("id", employeeId);
+    config_1.connection.query("SELECT * FROM employee_info WHERE profile_id = ?", [employeeId], (error, results, fields) => {
         if (error) {
-            console.error("Error fetching post:", error);
+            console.error("Error fetching employee:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal Server Error",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Error fetching post",
+                        message: "Error fetching employee",
                     },
                 ],
             });
@@ -62,101 +63,91 @@ const getPaidVideoById = (0, catchAsync_1.default)((req, res, next) => __awaiter
         if (results.length === 0) {
             return res.status(http_status_1.default.NOT_FOUND).json({
                 success: false,
-                message: "Post not found",
+                message: "Employee not found",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Post not found with given ID",
+                        message: "Employee not found with given ID",
                     },
                 ],
             });
         }
-        const post = results[0];
+        // Assuming results contains the Employee data
+        const employee = results[0];
         (0, sendResponse_1.default)(res, {
             statusCode: http_status_1.default.OK,
             success: true,
-            message: "Post fetched successfully",
-            data: post,
+            message: "Employee fetched successfully",
+            data: employee,
         });
     });
 }));
-const createPaidVideo = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const createEmployee = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    // const { name, number, role, admin_email, password } = req.body;
+    // console.log("admin", name);
+    const generateId = yield (0, generateId_1.generateNextEmployeeProfileId)();
+    // const providedDate = moment('2024-01-14 12:42:59');
     const formattedDate = moment_timezone_1.default.tz("Asia/Dhaka").format();
-    const newPost = {
-        title: req.body.title,
-        post: req.body.post,
-        video: req.body.video || null,
-        division: req.body.division,
-        district: req.body.district,
-        thana: req.body.thana,
-        ward: req.body.ward,
-        localArea: req.body.localArea,
-        road: req.body.road,
-        category: req.body.category,
-        subcategories: req.body.subcategories,
-        client_id: req.body.client_id,
+    const newAdmin = {
+        name: req.body.name,
+        profile_id: generateId,
+        birthday: req.body.birthday,
+        emp_number: req.body.emp_number,
+        emp_nid: req.body.emp_nid,
+        emp_address: req.body.emp_address,
+        emp_email: req.body.emp_email,
+        password: req.body.password,
+        emp_role: req.body.emp_role,
+        supperAdmin_id: req.body.supperAdmin_id || null,
+        supperAdmin_name: req.body.supperAdmin_name || null,
+        image: req.body.image ||
+            "https://www.vhv.rs/dpng/d/15-155087_dummy-image-of-user-hd-png-download.png",
         created_at: formattedDate,
         updated_at: formattedDate,
     };
-    // console.log("newPost", newPost);
-    config_1.connection.query("INSERT INTO paid_video_post SET ?", newPost, (error, results, fields) => {
+    config_1.connection.query("INSERT INTO employee_info SET ?", newAdmin, (error, results, fields) => {
         if (error) {
-            console.error("Error creating newPost:", error);
+            console.error("Error creating admin:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal Server Error",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Error creating newPost",
+                        message: "Error creating admin",
                     },
                 ],
             });
         }
-        const createdPostId = results.insertId;
+        const createdAdminId = results.insertId;
         (0, sendResponse_1.default)(res, {
             statusCode: http_status_1.default.CREATED,
             success: true,
-            message: "Post created successfully",
-            data: { id: createdPostId },
+            message: "Admin created successfully",
+            data: { id: createdAdminId },
         });
     });
 }));
-const updatePaidVideo = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const postId = req.params.id;
-    const { title, post, category, subcategories, division, district, thana, ward, localArea, road, } = req.body;
+const updateEmployee = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const employeeId = req.params.id; // Assuming employeeId is passed as a route parameter
+    const { name, emp_number, email, password, emp_role } = req.body;
     // Create an object to hold the fields to be updated
     const updatedFields = {};
     // Check which fields are provided in the request body and add them to the updatedFields object
-    if (title !== undefined) {
-        updatedFields.title = title;
+    if (name !== undefined) {
+        updatedFields.name = name;
     }
-    if (post !== undefined) {
-        updatedFields.post = post;
+    if (emp_number !== undefined) {
+        updatedFields.number = emp_number;
     }
-    if (category !== undefined) {
-        updatedFields.category = category;
+    if (email !== undefined) {
+        updatedFields.email = email;
     }
-    if (subcategories !== undefined) {
-        updatedFields.subcategories = subcategories;
+    if (password !== undefined) {
+        updatedFields.password = password;
     }
-    if (division !== undefined) {
-        updatedFields.division = division;
-    }
-    if (district !== undefined) {
-        updatedFields.district = district;
-    }
-    if (thana !== undefined) {
-        updatedFields.thana = thana;
-    }
-    if (ward !== undefined) {
-        updatedFields.ward = ward;
-    }
-    if (localArea !== undefined) {
-        updatedFields.localArea = localArea;
-    }
-    if (road !== undefined) {
-        updatedFields.road = road;
+    if (emp_role !== undefined) {
+        updatedFields.password = emp_role;
     }
     // If no fields to update are provided, send a bad request response
     if (Object.keys(updatedFields).length === 0) {
@@ -165,16 +156,17 @@ const updatePaidVideo = (0, catchAsync_1.default)((req, res, next) => __awaiter(
             message: "No fields to update provided",
         });
     }
-    config_1.connection.query("UPDATE paid_video_post SET ? WHERE id = ?", [updatedFields, postId], (error, results, fields) => {
+    // console.log('data', updatedFields, employeeId)
+    config_1.connection.query("UPDATE employee_info SET ? WHERE profile_id = ?", [updatedFields, employeeId], (error, results, fields) => {
         if (error) {
-            console.error("Error updating hall room post:", error);
+            console.error("Error updating employee:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal Server Error",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Error updating hall room post",
+                        message: "Error updating employee",
                     },
                 ],
             });
@@ -182,34 +174,35 @@ const updatePaidVideo = (0, catchAsync_1.default)((req, res, next) => __awaiter(
         (0, sendResponse_1.default)(res, {
             statusCode: http_status_1.default.OK,
             success: true,
-            message: "Hall room post updated successfully",
+            message: "Employee updated successfully",
         });
     });
 }));
-const deletePaidVideo = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const postId = req.params.id;
-    config_1.connection.query("DELETE FROM paid_video_post WHERE id = ?", [postId], (error, results, fields) => {
+const deleteEmployee = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const employeeId = req.params.id; // Assuming employeeId is passed as a route parameter
+    config_1.connection.query("DELETE FROM employee_info WHERE profile_id = ?", [employeeId], (error, results, fields) => {
         if (error) {
-            console.error("Error deleting post:", error);
+            console.error("Error deleting employee:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal Server Error",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Error deleting post",
+                        message: "Error deleting employee",
                     },
                 ],
             });
         }
+        // Check if any employee was deleted
         if (results.affectedRows === 0) {
             return res.status(http_status_1.default.NOT_FOUND).json({
                 success: false,
-                message: "Post not found",
+                message: "Employee not found",
                 errorMessages: [
                     {
                         path: req.originalUrl,
-                        message: "Post not found with given profile ID",
+                        message: "Employee not found with given profile ID",
                     },
                 ],
             });
@@ -217,14 +210,14 @@ const deletePaidVideo = (0, catchAsync_1.default)((req, res, next) => __awaiter(
         (0, sendResponse_1.default)(res, {
             statusCode: http_status_1.default.OK,
             success: true,
-            message: "Post deleted successfully",
+            message: "Employee deleted successfully",
         });
     });
 }));
-exports.paidVideoController = {
-    createPaidVideo,
-    getPaidVideoById,
-    deletePaidVideo,
-    updatePaidVideo,
-    getAllPaidVideos,
+exports.employeeController = {
+    createEmployee,
+    getEmployeeById,
+    deleteEmployee,
+    updateEmployee,
+    getAllEmployees,
 };

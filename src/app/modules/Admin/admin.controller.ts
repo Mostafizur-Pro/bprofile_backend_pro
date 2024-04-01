@@ -91,7 +91,7 @@ const createAdmin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { name, number, role, admin_email, password } = req.body;
 
-    console.log("admin", name);
+    // console.log("admin", name);
 
     const generateId = await generateNextAdminProfileId();
     // const providedDate = moment('2024-01-14 12:42:59');

@@ -1,12 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-// import { userService } from "./user.service";
 import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
 import catchAsync from "../../../shared/catchAsync";
-import { paginationFields } from "../../../constants/pagination";
-import pick from "../../../shared/pick";
-
-import { User } from "./user.model";
 import moment from "moment-timezone";
 import { generateNextUserProfileId } from "../../../utils/generateId";
 import { connection } from "../../config";
@@ -248,7 +243,6 @@ const deleteUser = catchAsync(
     );
   }
 );
-
 
 export const userController = {
   createUser,

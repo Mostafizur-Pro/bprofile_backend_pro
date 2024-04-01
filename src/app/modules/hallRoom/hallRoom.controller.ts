@@ -5,38 +5,122 @@ import catchAsync from "../../../shared/catchAsync";
 import moment from "moment-timezone";
 import { connection } from "../../config";
 
-const hallRoomFilterableFields = ["searchTerm", "title", "syncId"];
+interface ApiResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: any[];
+  totalCount: number;
+  grandTotal: number;
+}
 
 const getAllHallRooms = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const page = parseInt(req.query.page as string) || 1; // Default page is 1
+    const limit = parseInt(req.query.limit as string) || 10; // Default limit is 10
+    const searchTerm = req.query.searchTerm as string; // Search term from query parameter
+
+    const startIndex = (page - 1) * limit;
+
+    let query = `SELECT * FROM hall_room_post`;
+
+    if (searchTerm) {
+      query += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+    }
+
+    let grandTotalQuery = `SELECT COUNT(*) AS count FROM hall_room_post`;
+    if (searchTerm) {
+      grandTotalQuery += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+    }
+
     connection.query(
-      "SELECT * FROM hall_room_post",
-      (error: any, results: any, fields: any) => {
-        console.log("results", results);
+      grandTotalQuery,
+      (error: any, grandTotalResult: any, fields: any) => {
         if (error) {
-          console.error("Error fetching post:", error);
+          console.error("Error fetching grand total:", error);
           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
             success: false,
             message: "Internal Server Error",
             errorMessages: [
               {
                 path: req.originalUrl,
-                message: "Error fetching post",
+                message: "Error fetching grand total",
               },
             ],
           });
         }
 
-        sendResponse(res, {
-          statusCode: httpStatus.CREATED,
-          success: true,
-          message: "Post fetched successfully",
-          data: results,
-        });
+        const grandTotal = grandTotalResult[0].count;
+
+        query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`; // Ordering by id in descending order and limiting the results for pagination
+
+        connection.query(
+          query,
+          (error: any, results: any, fields: any) => {
+            if (error) {
+              console.error("Error fetching post:", error);
+              return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Internal Server Error",
+                errorMessages: [
+                  {
+                    path: req.originalUrl,
+                    message: "Error fetching post",
+                  },
+                ],
+              });
+            }
+
+            const totalCount = results.length; // Total count of records for the current page
+            const dataToShow = results;
+
+            const response: ApiResponse = {
+              statusCode: httpStatus.CREATED,
+              success: true,
+              message: "Post fetched successfully",
+              totalCount: totalCount,
+              grandTotal: grandTotal, // Including the grand total in the response
+              data: dataToShow,
+            };
+
+            return res.status(response.statusCode).json(response);
+          }
+        );
       }
     );
   }
 );
+
+// const getAllHallRooms = catchAsync(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     connection.query(
+//       "SELECT * FROM hall_room_post",
+//       (error: any, results: any, fields: any) => {
+//         // console.log("results", results);
+//         if (error) {
+//           console.error("Error fetching post:", error);
+//           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+//             success: false,
+//             message: "Internal Server Error",
+//             errorMessages: [
+//               {
+//                 path: req.originalUrl,
+//                 message: "Error fetching post",
+//               },
+//             ],
+//           });
+//         }
+
+//         sendResponse(res, {
+//           statusCode: httpStatus.CREATED,
+//           success: true,
+//           message: "Post fetched successfully",
+//           data: results,
+//         });
+//       }
+//     );
+//   }
+// );
 
 const getHallRoomById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
