@@ -21,18 +21,27 @@ const generateId_1 = require("../../../utils/generateId");
 const config_1 = require("../../config");
 const getAllClients = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const page = parseInt(req.query.page) || 1; // Default page is 1
-    const limit = parseInt(req.query.limit) || 10; // Default limit is 10
+    const limit = parseInt(req.query.limit) || 20; // Default limit is 10
     const searchTerm = req.query.searchTerm; // Search term from query parameter
     const startIndex = (page - 1) * limit;
     let query = `SELECT * FROM client_data`;
     if (searchTerm) {
-        query += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+        query += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR number LIKE ?`; // Use placeholders for SQL injection prevention
     }
     let grandTotalQuery = `SELECT COUNT(*) AS count FROM client_data`;
     if (searchTerm) {
-        grandTotalQuery += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+        grandTotalQuery += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR number LIKE ?`; // Use placeholders for SQL injection prevention
     }
-    config_1.connection.query(grandTotalQuery, (error, grandTotalResult, fields) => {
+    config_1.connection.query(grandTotalQuery, [
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`
+    ], (error, grandTotalResult, fields) => {
         if (error) {
             console.error("Error fetching grand total:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
@@ -48,7 +57,18 @@ const getAllClients = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
         }
         const grandTotal = grandTotalResult[0].count;
         query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`; // Ordering by id in descending order and limiting the results for pagination
-        config_1.connection.query(query, (error, results, fields) => {
+        config_1.connection.query(query, [
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            startIndex,
+            limit
+        ], (error, results, fields) => {
             if (error) {
                 console.error("Error fetching clients:", error);
                 return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
@@ -63,48 +83,42 @@ const getAllClients = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
                 });
             }
             const totalCount = results.length; // Total count of records for the current page
-            const dataToShow = results;
             const response = {
                 statusCode: http_status_1.default.CREATED,
                 success: true,
                 message: "Clients fetched successfully",
                 totalCount: totalCount,
                 grandTotal: grandTotal, // Including the grand total in the response
-                data: dataToShow,
+                data: results,
             };
             return res.status(response.statusCode).json(response);
         });
     });
 }));
-// const getAllClients = catchAsync(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     connection.query(
-//       "SELECT * FROM client_data",
-//       (error: any, results: any, fields: any) => {
-//         // console.log("resu", results);
-//         if (error) {
-//           console.error("Error fetching client:", error);
-//           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-//             success: false,
-//             message: "Internal Server Error",
-//             errorMessages: [
-//               {
-//                 path: req.originalUrl,
-//                 message: "Error fetching client",
-//               },
-//             ],
-//           });
-//         }
-//         sendResponse(res, {
-//           statusCode: httpStatus.CREATED,
-//           success: true,
-//           message: "Client fetched successfully",
-//           data: results,
-//         });
-//       }
-//     );
-//   }
-// );
+const getAllClientData = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    config_1.connection.query("SELECT * FROM client_data", (error, results, fields) => {
+        // console.log("resu", results);
+        if (error) {
+            console.error("Error fetching client:", error);
+            return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Internal Server Error",
+                errorMessages: [
+                    {
+                        path: req.originalUrl,
+                        message: "Error fetching client",
+                    },
+                ],
+            });
+        }
+        (0, sendResponse_1.default)(res, {
+            statusCode: http_status_1.default.CREATED,
+            success: true,
+            message: "Client fetched successfully",
+            data: results,
+        });
+    });
+}));
 const getClientById = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const clientId = req.params.id; // Assuming clientId is passed as a route parameter
     // console.log("id", clientId);
@@ -293,4 +307,5 @@ exports.clientController = {
     deleteClient,
     updateClient,
     getAllClients,
+    getAllClientData
 };

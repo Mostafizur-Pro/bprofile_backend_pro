@@ -13,7 +13,6 @@ interface ApiResponse {
   totalCount: number;
   grandTotal: number;
 }
-
 const getAllHallRooms = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const page = parseInt(req.query.page as string) || 1; // Default page is 1
@@ -25,16 +24,27 @@ const getAllHallRooms = catchAsync(
     let query = `SELECT * FROM hall_room_post`;
 
     if (searchTerm) {
-      query += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+      query += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR client_id LIKE ?`; // Use placeholders for SQL injection prevention
     }
 
     let grandTotalQuery = `SELECT COUNT(*) AS count FROM hall_room_post`;
+
     if (searchTerm) {
-      grandTotalQuery += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+      grandTotalQuery += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR client_id LIKE ?`;
     }
 
     connection.query(
       grandTotalQuery,
+      [
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+      ],
       (error: any, grandTotalResult: any, fields: any) => {
         if (error) {
           console.error("Error fetching grand total:", error);
@@ -52,11 +62,23 @@ const getAllHallRooms = catchAsync(
 
         const grandTotal = grandTotalResult[0].count;
 
-        query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`; // Ordering by id in descending order and limiting the results for pagination
+        query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`;  // Use placeholders for SQL injection prevention
 
         connection.query(
           query,
-          (error: any, results: any, fields: any) => {
+          [
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            startIndex,
+            limit,
+          ],
+          async (error: any, results: any, fields: any) => {
             if (error) {
               console.error("Error fetching post:", error);
               return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -71,8 +93,14 @@ const getAllHallRooms = catchAsync(
               });
             }
 
-            const totalCount = results.length; // Total count of records for the current page
-            const dataToShow = results;
+            // Fetch client details for each post
+            for (let i = 0; i < results.length; i++) {
+              const clientId = results[i].client_id;
+              const client = await getClientById(clientId);
+              results[i].client = client; // Add client details to the post object
+            }
+
+            const totalCount = results.length;
 
             const response: ApiResponse = {
               statusCode: httpStatus.CREATED,
@@ -80,7 +108,7 @@ const getAllHallRooms = catchAsync(
               message: "Post fetched successfully",
               totalCount: totalCount,
               grandTotal: grandTotal, // Including the grand total in the response
-              data: dataToShow,
+              data: results,
             };
 
             return res.status(response.statusCode).json(response);
@@ -91,36 +119,151 @@ const getAllHallRooms = catchAsync(
   }
 );
 
+// Function to fetch client details by client_id
+async function getClientById(clientId: number) {
+  return new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT * FROM client_data WHERE id = ?`,
+      [clientId],
+      (error: any, results: any, fields: any) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results[0]); // Return the first result
+        }
+      }
+    );
+  });
+}
+
 // const getAllHallRooms = catchAsync(
 //   async (req: Request, res: Response, next: NextFunction) => {
+//     const page = parseInt(req.query.page as string) || 1; // Default page is 1
+//     const limit = parseInt(req.query.limit as string) || 10; // Default limit is 10
+//     const searchTerm = req.query.searchTerm as string; // Search term from query parameter
+
+//     const startIndex = (page - 1) * limit;
+
+//     let query = `SELECT * FROM hall_room_post`;
+
+//     if (searchTerm) {
+//       query += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR client_id LIKE ?`; // Use placeholders for SQL injection prevention
+//     }
+
+//     let grandTotalQuery = `SELECT COUNT(*) AS count FROM hall_room_post`;
+
+//     if (searchTerm) {
+//       grandTotalQuery += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR client_id LIKE ?`;
+//     }
 //     connection.query(
-//       "SELECT * FROM hall_room_post",
-//       (error: any, results: any, fields: any) => {
-//         // console.log("results", results);
+//       grandTotalQuery,
+//       [
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//         `%${searchTerm}%`,
+//       ],
+//       (error: any, grandTotalResult: any, fields: any) => {
 //         if (error) {
-//           console.error("Error fetching post:", error);
+//           console.error("Error fetching grand total:", error);
 //           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 //             success: false,
 //             message: "Internal Server Error",
 //             errorMessages: [
 //               {
 //                 path: req.originalUrl,
-//                 message: "Error fetching post",
+//                 message: "Error fetching grand total",
 //               },
 //             ],
 //           });
 //         }
 
-//         sendResponse(res, {
-//           statusCode: httpStatus.CREATED,
-//           success: true,
-//           message: "Post fetched successfully",
-//           data: results,
-//         });
+//         const grandTotal = grandTotalResult[0].count;
+
+//         query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`;  // Use placeholders for SQL injection prevention
+
+//         connection.query(
+//           query,
+//           [
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             `%${searchTerm}%`,
+//             startIndex,
+//             limit,
+//           ],
+//           (error: any, results: any, fields: any) => {
+//             if (error) {
+//               console.error("Error fetching post:", error);
+//               return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+//                 success: false,
+//                 message: "Internal Server Error",
+//                 errorMessages: [
+//                   {
+//                     path: req.originalUrl,
+//                     message: "Error fetching post",
+//                   },
+//                 ],
+//               });
+//             }
+
+//             const totalCount = results.length;
+
+//             const response: ApiResponse = {
+//               statusCode: httpStatus.CREATED,
+//               success: true,
+//               message: "Post fetched successfully",
+//               totalCount: totalCount,
+//               grandTotal: grandTotal, // Including the grand total in the response
+//               data: results,
+//             };
+
+//             return res.status(response.statusCode).json(response);
+//           }
+//         );
 //       }
 //     );
 //   }
 // );
+
+const getAllHallRoomData = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    connection.query(
+      "SELECT * FROM hall_room_post",
+      (error: any, results: any, fields: any) => {
+        // console.log("results", results);
+        if (error) {
+          console.error("Error fetching post:", error);
+          return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Internal Server Error",
+            errorMessages: [
+              {
+                path: req.originalUrl,
+                message: "Error fetching post",
+              },
+            ],
+          });
+        }
+
+        sendResponse(res, {
+          statusCode: httpStatus.CREATED,
+          success: true,
+          message: "Post fetched successfully",
+          data: results,
+        });
+      }
+    );
+  }
+);
 
 const getHallRoomById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -361,4 +504,5 @@ export const hallRoomController = {
   deleteHallRoom,
   updateHallRoom,
   getAllHallRooms,
+  getAllHallRoomData
 };

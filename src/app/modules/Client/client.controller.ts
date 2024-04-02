@@ -18,24 +18,45 @@ interface ApiResponse {
 const getAllClients = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const page = parseInt(req.query.page as string) || 1; // Default page is 1
-    const limit = parseInt(req.query.limit as string) || 20; // Default limit is 10
+    const limit = parseInt(req.query.limit as string) || 20; // Default limit is 20
     const searchTerm = req.query.searchTerm as string; // Search term from query parameter
+    const searchId = parseInt(req.query.searchId as string); // Search ID from query parameter
 
     const startIndex = (page - 1) * limit;
 
     let query = `SELECT * FROM client_data`;
 
+    const queryParams: (string | number)[] = [];
+    let whereClause = '';
+
     if (searchTerm) {
-      query += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+      whereClause += ` id LIKE ? OR category LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR number LIKE ?`;
+      queryParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+    }
+
+    if (searchId) {
+      if (whereClause) {
+        whereClause += ' AND';
+      }
+      whereClause += ' id = ?';
+      queryParams.push(searchId);
+    }
+
+    if (whereClause) {
+      query += ` WHERE ${whereClause}`;
     }
 
     let grandTotalQuery = `SELECT COUNT(*) AS count FROM client_data`;
-    if (searchTerm) {
-      grandTotalQuery += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+
+    if (whereClause) {
+      grandTotalQuery += ` WHERE ${whereClause}`;
     }
+
+    console.log('client', searchTerm)
 
     connection.query(
       grandTotalQuery,
+      queryParams,
       (error: any, grandTotalResult: any, fields: any) => {
         if (error) {
           console.error("Error fetching grand total:", error);
@@ -53,10 +74,12 @@ const getAllClients = catchAsync(
 
         const grandTotal = grandTotalResult[0].count;
 
-        query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`; // Ordering by id in descending order and limiting the results for pagination
+        query += ` ORDER BY id DESC LIMIT ?, ?`; // Use placeholders for SQL injection prevention
+        queryParams.push(startIndex, limit);
 
         connection.query(
           query,
+          queryParams,
           (error: any, results: any, fields: any) => {
             if (error) {
               console.error("Error fetching clients:", error);
@@ -73,7 +96,6 @@ const getAllClients = catchAsync(
             }
 
             const totalCount = results.length; // Total count of records for the current page
-            const dataToShow = results;
 
             const response: ApiResponse = {
               statusCode: httpStatus.CREATED,
@@ -81,7 +103,7 @@ const getAllClients = catchAsync(
               message: "Clients fetched successfully",
               totalCount: totalCount,
               grandTotal: grandTotal, // Including the grand total in the response
-              data: dataToShow,
+              data: results,
             };
 
             return res.status(response.statusCode).json(response);
@@ -92,36 +114,36 @@ const getAllClients = catchAsync(
   }
 );
 
-// const getAllClients = catchAsync(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     connection.query(
-//       "SELECT * FROM client_data",
-//       (error: any, results: any, fields: any) => {
-//         // console.log("resu", results);
-//         if (error) {
-//           console.error("Error fetching client:", error);
-//           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-//             success: false,
-//             message: "Internal Server Error",
-//             errorMessages: [
-//               {
-//                 path: req.originalUrl,
-//                 message: "Error fetching client",
-//               },
-//             ],
-//           });
-//         }
+const getAllClientData = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    connection.query(
+      "SELECT * FROM client_data",
+      (error: any, results: any, fields: any) => {
+        // console.log("resu", results);
+        if (error) {
+          console.error("Error fetching client:", error);
+          return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Internal Server Error",
+            errorMessages: [
+              {
+                path: req.originalUrl,
+                message: "Error fetching client",
+              },
+            ],
+          });
+        }
 
-//         sendResponse(res, {
-//           statusCode: httpStatus.CREATED,
-//           success: true,
-//           message: "Client fetched successfully",
-//           data: results,
-//         });
-//       }
-//     );
-//   }
-// );
+        sendResponse(res, {
+          statusCode: httpStatus.CREATED,
+          success: true,
+          message: "Client fetched successfully",
+          data: results,
+        });
+      }
+    );
+  }
+);
 
 const getClientById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -250,7 +272,7 @@ const createClient = catchAsync(
 const updateClient = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const clientId = req.params.id;
-    const { name,organization_name, number, email, password } = req.body;
+    const { name, organization_name, number, email, password } = req.body;
 
     // Create an object to hold the fields to be updated
     const updatedFields: { [key: string]: any } = {};
@@ -359,4 +381,5 @@ export const clientController = {
   deleteClient,
   updateClient,
   getAllClients,
+  getAllClientData,
 };

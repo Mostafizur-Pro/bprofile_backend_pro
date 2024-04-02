@@ -25,13 +25,22 @@ const getAllHallRooms = (0, catchAsync_1.default)((req, res, next) => __awaiter(
     const startIndex = (page - 1) * limit;
     let query = `SELECT * FROM hall_room_post`;
     if (searchTerm) {
-        query += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+        query += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR client_id LIKE ?`; // Use placeholders for SQL injection prevention
     }
     let grandTotalQuery = `SELECT COUNT(*) AS count FROM hall_room_post`;
     if (searchTerm) {
-        grandTotalQuery += ` WHERE category LIKE '%${searchTerm}%'`; // Adjust this according to your database schema
+        grandTotalQuery += ` WHERE category LIKE ? OR id LIKE ? OR subcategories LIKE ? OR division LIKE ? OR district LIKE ? OR thana LIKE ? OR ward LIKE ? OR client_id LIKE ?`;
     }
-    config_1.connection.query(grandTotalQuery, (error, grandTotalResult, fields) => {
+    config_1.connection.query(grandTotalQuery, [
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+    ], (error, grandTotalResult, fields) => {
         if (error) {
             console.error("Error fetching grand total:", error);
             return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
@@ -46,8 +55,19 @@ const getAllHallRooms = (0, catchAsync_1.default)((req, res, next) => __awaiter(
             });
         }
         const grandTotal = grandTotalResult[0].count;
-        query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`; // Ordering by id in descending order and limiting the results for pagination
-        config_1.connection.query(query, (error, results, fields) => {
+        query += ` ORDER BY id DESC LIMIT ${startIndex}, ${limit}`; // Use placeholders for SQL injection prevention
+        config_1.connection.query(query, [
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            `%${searchTerm}%`,
+            startIndex,
+            limit,
+        ], (error, results, fields) => {
             if (error) {
                 console.error("Error fetching post:", error);
                 return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
@@ -61,49 +81,43 @@ const getAllHallRooms = (0, catchAsync_1.default)((req, res, next) => __awaiter(
                     ],
                 });
             }
-            const totalCount = results.length; // Total count of records for the current page
-            const dataToShow = results;
+            const totalCount = results.length;
             const response = {
                 statusCode: http_status_1.default.CREATED,
                 success: true,
                 message: "Post fetched successfully",
                 totalCount: totalCount,
                 grandTotal: grandTotal, // Including the grand total in the response
-                data: dataToShow,
+                data: results,
             };
             return res.status(response.statusCode).json(response);
         });
     });
 }));
-// const getAllHallRooms = catchAsync(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     connection.query(
-//       "SELECT * FROM hall_room_post",
-//       (error: any, results: any, fields: any) => {
-//         // console.log("results", results);
-//         if (error) {
-//           console.error("Error fetching post:", error);
-//           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-//             success: false,
-//             message: "Internal Server Error",
-//             errorMessages: [
-//               {
-//                 path: req.originalUrl,
-//                 message: "Error fetching post",
-//               },
-//             ],
-//           });
-//         }
-//         sendResponse(res, {
-//           statusCode: httpStatus.CREATED,
-//           success: true,
-//           message: "Post fetched successfully",
-//           data: results,
-//         });
-//       }
-//     );
-//   }
-// );
+const getAllHallRoomData = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    config_1.connection.query("SELECT * FROM hall_room_post", (error, results, fields) => {
+        // console.log("results", results);
+        if (error) {
+            console.error("Error fetching post:", error);
+            return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Internal Server Error",
+                errorMessages: [
+                    {
+                        path: req.originalUrl,
+                        message: "Error fetching post",
+                    },
+                ],
+            });
+        }
+        (0, sendResponse_1.default)(res, {
+            statusCode: http_status_1.default.CREATED,
+            success: true,
+            message: "Post fetched successfully",
+            data: results,
+        });
+    });
+}));
 const getHallRoomById = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const postId = req.params.id; // Assuming postId is passed as a route parameter
     // console.log("id", postId);
@@ -288,4 +302,5 @@ exports.hallRoomController = {
     deleteHallRoom,
     updateHallRoom,
     getAllHallRooms,
+    getAllHallRoomData
 };

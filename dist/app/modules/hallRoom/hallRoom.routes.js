@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const hallRoom_controller_1 = require("./hallRoom.controller");
 const router = express_1.default.Router();
 router.get("/", hallRoom_controller_1.hallRoomController.getAllHallRooms);
+router.get("/all", hallRoom_controller_1.hallRoomController.getAllHallRoomData);
 router.get("/:id", hallRoom_controller_1.hallRoomController.getHallRoomById);
 router.post("/", hallRoom_controller_1.hallRoomController.createHallRoom);
 router.put("/:id", hallRoom_controller_1.hallRoomController.updateHallRoom);
